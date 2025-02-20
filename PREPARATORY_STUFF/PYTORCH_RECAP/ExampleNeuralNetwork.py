@@ -45,17 +45,8 @@ class NN_Model(nn.Module):
             return x
 
 
-# define the training function (batch gradient descent)_______________________________________
+# define the training function (batch gradient descent)_______________________________________     
 
-# MSE
-'''
-def MSE(y_pred, y_true):
-     n = len(y_true)
-     mse = (np.sum((y_pred - y_true)**2))/n
-     return(mse)
-'''
-     
-# training function
 def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_epochs):
      
     global train_acc_array  # delcare as global so we can use it outside the function
