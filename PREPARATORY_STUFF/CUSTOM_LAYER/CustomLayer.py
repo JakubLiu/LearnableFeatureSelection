@@ -5,9 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
-from matplotlib import pyplot as plt
 import torch.nn.functional as F
-from torchviz import make_dot
 from torchsummary import summary
 
 
