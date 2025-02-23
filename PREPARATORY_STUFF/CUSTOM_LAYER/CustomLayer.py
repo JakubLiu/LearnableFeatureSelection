@@ -29,13 +29,16 @@ In our case the mask is just an identity matrix.
 (Since the input and output layers have the same number of nodes and each node is connected
 only to its one corresponding node.)
 """
-class CustomLinear(nn.Linear):
-    def __init__(self, *args, mask, **kwargs):
-        super().__init__(*args, **kwargs)
+class CustomLinear(nn.Module):
+
+    def __init__(self, *args, **kwargs):
+        super(CustomLinear, self).__init__()
+        self.weight = nn.Parameter(torch.ones(input_dim))
+        self.bias = nn.Parameter(torch.zeros(input_dim))
         self.mask = mask
 
     def forward(self, input):
-        return F.linear(input, self.weight, self.bias)*self.mask
+        return input * self.weight + self.bias
 
 # define the mask  
 mask = np.eye(X_train.shape[1], dtype = np.int8)
@@ -52,7 +55,7 @@ class Model_with_CustomLayer(nn.Module):
      
     def __init__(self):
         super(Model_with_CustomLayer, self).__init__()
-        self.custom = CustomLinear(input_dim, input_dim, mask=mask) # this is the custom layers
+        self.custom = CustomLinear(input_dim, input_dim) # this is the custom layers
         self.fc1 = nn.Linear(input_dim, 64)
         self.fc2 = nn.Linear(64,32)
         self.fc3 = nn.Linear(32,1)
@@ -69,8 +72,27 @@ class Model_with_CustomLayer(nn.Module):
          return(x)
 
 
+class StandardFCModel(nn.Module):
+    def __init__(self):
+        super(StandardFCModel, self).__init__()
+        self.fc1 = nn.Linear(input_dim, input_dim)
+        self.fc2 = nn.Linear(input_dim,32)
+        self.fc3 = nn.Linear(32,1)
+
+    def forward(self, x):
+         x = self.fc1(x)
+         x = torch.relu(x)
+         x = self.fc2(x)
+         x = torch.relu(x)
+         x = self.fc3(x)
+
+         return(x)
+
+
 # visualize the model __________________________________________________________________________________________________
 
 custom_model = Model_with_CustomLayer()
+standard_model = StandardFCModel()
 
-summary(custom_model, (1, X_train.shape[1]))  
+summary(custom_model, (1, X_train.shape[1])) 
+summary(standard_model, (1, X_train.shape[1]))
