@@ -24,25 +24,19 @@ print(Y_test.shape)
 
 # create a class of our custom layer__________________________________________________________________________________________
 """
-Our custom layer will just be a masked fully connected layer.
-In our case the mask is just an identity matrix.
-(Since the input and output layers have the same number of nodes and each node is connected
-only to its one corresponding node.)
+Our custom linear layer will not be a fully connected layer. It will have N input and N output neurons
+and each neuron in the input layer will be connected to only one neuron in the output layer (look at the pdf).
+There will be no biases (only weights).
 """
 class CustomLinear(nn.Module):
 
     def __init__(self, *args, **kwargs):
         super(CustomLinear, self).__init__()
         self.weight = nn.Parameter(torch.ones(input_dim))
-        self.bias = nn.Parameter(torch.zeros(input_dim))
-        self.mask = mask
 
     def forward(self, input):
-        return input * self.weight + self.bias
+        return input * self.weight  # notice no bias
 
-# define the mask  
-mask = np.eye(X_train.shape[1], dtype = np.int8)
-mask = torch.from_numpy(mask)
 
 
 
@@ -50,7 +44,7 @@ mask = torch.from_numpy(mask)
 
 input_dim = X_train.shape[1]   # the number of features/columns
 
-
+# define a model with our custom layer
 class Model_with_CustomLayer(nn.Module):
      
     def __init__(self):
@@ -72,6 +66,7 @@ class Model_with_CustomLayer(nn.Module):
          return(x)
 
 
+# define a 'normal' model with only fully connected layers, for comparison
 class StandardFCModel(nn.Module):
     def __init__(self):
         super(StandardFCModel, self).__init__()
@@ -94,5 +89,48 @@ class StandardFCModel(nn.Module):
 custom_model = Model_with_CustomLayer()
 standard_model = StandardFCModel()
 
+# compare the two models
 summary(custom_model, (1, X_train.shape[1])) 
 summary(standard_model, (1, X_train.shape[1]))
+
+
+# output_______________________________________________________________________________________________________________-
+"""
+
+========================================= MODEL WITH CUSTOM LAYER  ==================================================
+
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+      CustomLinear-1               [-1, 1, 100]             100   
+            Linear-2                [-1, 1, 64]           6,464
+            Linear-3                [-1, 1, 32]           2,080
+            Linear-4                 [-1, 1, 1]              33
+================================================================
+Total params: 8,677
+Trainable params: 8,677
+Non-trainable params: 0
+
+As can be seen, the CustomLinear-1 has 100 parameters. This is as expected, since the input size is 100 (features)
+and our CustomLinear-1 layer has 100 connections between the input and output nodes and one weights (and no bias)
+per connection.
+
+
+
+========================= STANDARD MODEL WIH ONLY FULLY CONNECTED LAYERS ================================================
+
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+            Linear-1               [-1, 1, 100]          10,100
+            Linear-2                [-1, 1, 32]           3,232
+            Linear-3                 [-1, 1, 1]              33
+================================================================
+Total params: 13,365
+Trainable params: 13,365
+Non-trainable params: 0
+
+As can be seen although the Linear-1 layer has the same input dimensions as the CustomLinear-1 layer, it has much
+more parameters since it is a fully connected layer. It has 100 connections per neuron (and there are 100 neurons
+in the input and output laters), so 100x100 + 100(biases) = 10 100.
+"""
