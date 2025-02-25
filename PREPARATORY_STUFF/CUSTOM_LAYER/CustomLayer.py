@@ -26,16 +26,22 @@ print(Y_test.shape)
 """
 Our custom linear layer will not be a fully connected layer. It will have N input and N output neurons
 and each neuron in the input layer will be connected to only one neuron in the output layer (look at the pdf).
-There will be no biases (only weights).
+There will be no biases (only weights). In addition the weights will be only binary (0 or 1).
 """
 class CustomLinear(nn.Module):
 
     def __init__(self, *args, **kwargs):
         super(CustomLinear, self).__init__()
-        self.weight = nn.Parameter(torch.ones(input_dim))
+        self.weight = nn.Parameter(torch.ones(input_dim)) # initialize random weigths
+
+    def binarize(self, weight):  # function that sets the weights to 0 or 1
+        weight_bin = (weight >= 0).float()
+        return weight_bin
 
     def forward(self, input):
-        return input * self.weight  # notice no bias
+        binary_weight = self.binarize(self.weight)  # binarize ({0,1}) the weights
+        output =  input * binary_weight  # notice no bias
+        return output
 
 
 
@@ -92,6 +98,7 @@ standard_model = StandardFCModel()
 # compare the two models
 summary(custom_model, (1, X_train.shape[1])) 
 summary(standard_model, (1, X_train.shape[1]))
+
 
 
 # output_______________________________________________________________________________________________________________-
