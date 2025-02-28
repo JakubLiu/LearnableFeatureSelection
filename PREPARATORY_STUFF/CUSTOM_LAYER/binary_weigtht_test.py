@@ -24,11 +24,11 @@ class CustomLinear(nn.Module):
 
     def __init__(self, *args, **kwargs):
         super(CustomLinear, self).__init__()
-        self.weight = nn.Parameter(torch.ones(input_dim)) # initialize random weigths
+        self.weight = nn.Parameter(torch.randn(input_dim)) # initialize random weigths
 
     def binarize(self, weight):  # function that sets the weights to 0 or 1
         weight_bin = (weight >= 0).float()
-        return weight_bin
+        return (weight_bin - weight).detach() + weight # this is the STE procedure
 
     def forward(self, input):
         binary_weight = self.binarize(self.weight)  # binarize ({0,1}) the weights
@@ -82,18 +82,22 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
           test_acc = loss  # save the testing accuracy for the current epoch
           test_acc_array[epoch] = test_acc  # save for plotting
 
-          # print status for current epoch
-          #status = "epoch: {}\n training loss: {}\n testing loss: {}\n".format(epoch, train_acc, test_acc)
-          #print(status)
-          binary_weights = model.custom.weight.detach().cpu().numpy()
-          status = "epoch: {}\n custom layer weigths: {}".format(epoch, binary_weights)
-          print(status)
+          # pring the binary weights of the custom layer
+
+          # the differentialble weights from the STE procedure
+          custom_layer_weights_for_backprop = model.custom.weight
+          
+          # the binarized weights from the forward pass (the binary feature mask)
+          custom_layer_weights_for_forward_pass = model.custom.binarize(custom_layer_weights_for_backprop).detach().cpu().numpy()
+          
+          print(f"Epoch: {epoch} | Custom Layer Binary Weights: {custom_layer_weights_for_forward_pass}")
           print("="*50)
 
 
 # train the model and inspect the weigths at each epoch_____________________________________________________________________________
+# here I dont care about the performance of the model, I just want to check how the weights behave.
 model = Model_with_CustomLayer()
 loss_fn = nn.MSELoss()
 optim = optim.Adam(model.parameters())
-n_epochs = 1000
+n_epochs = 10
 train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs)

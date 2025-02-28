@@ -26,17 +26,21 @@ print(Y_test.shape)
 """
 Our custom linear layer will not be a fully connected layer. It will have N input and N output neurons
 and each neuron in the input layer will be connected to only one neuron in the output layer (look at the pdf).
-There will be no biases (only weights). In addition the weights will be only binary (0 or 1).
+There will be no biases (only weights). In addition the weights will be only binary (0 or 1). 
+Since backpropagation is not possible on binary weights, we need to use the STE procedure.
+Links for that:
+https://hassanaskary.medium.com/intuitive-explanation-of-straight-through-estimators-with-pytorch-implementation-71d99d25d9d0
+https://stackoverflow.com/questions/79469831/using-binary-0-1-weights-in-a-neural-network-layer
 """
 class CustomLinear(nn.Module):
 
     def __init__(self, *args, **kwargs):
         super(CustomLinear, self).__init__()
-        self.weight = nn.Parameter(torch.ones(input_dim)) # initialize random weigths
+        self.weight = nn.Parameter(torch.randn(input_dim)) # initialize random weigths
 
     def binarize(self, weight):  # function that sets the weights to 0 or 1
         weight_bin = (weight >= 0).float()
-        return weight_bin
+        return (weight_bin - weight).detach() + weight # this is the STE procedure
 
     def forward(self, input):
         binary_weight = self.binarize(self.weight)  # binarize ({0,1}) the weights

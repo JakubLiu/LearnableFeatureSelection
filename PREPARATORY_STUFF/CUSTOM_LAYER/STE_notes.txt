@@ -1,0 +1,12 @@
+- we need binary weights in the custom layer to act as a feature mask
+- but backpropagation is impossible on binary weights
+- thereofre we need to use the STE 'trick'
+- this trick allows to bypass the binarization function during backpropagation
+- so in the forward pass the weights are still binary, effectively masking out some features
+- but in the backward pass these same features are not binary, making backpropagation possible
+
+LINKS:
+
+    https://hassanaskary.medium.com/intuitive-explanation-of-straight-through-estimators-with-pytorch-implementation-71d99d25d9d0
+
+    https://stackoverflow.com/questions/79469831/using-binary-0-1-weights-in-a-neural-network-layer
