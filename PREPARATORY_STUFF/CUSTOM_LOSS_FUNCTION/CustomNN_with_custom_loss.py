@@ -5,9 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
-import torch.nn.functional as F
-from torchsummary import summary
-
+from matplotlib import pyplot as plt
 
 # read and prepare data _____________________________________________________________________
 X = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/PYTORCH_RECAP/X_sim.txt', dtype = np.float32)
@@ -15,6 +13,7 @@ Y = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/L
 X = torch.tensor(X)
 Y = torch.tensor(Y).reshape(-1, 1)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.33)
+
 
 
 # build the custom model _____________________________________________________________________________________
@@ -55,34 +54,42 @@ class Model_with_CustomLayer(nn.Module):
          x = self.fc3(x)
 
          return(x)
+    
+
+# define the custom loss function___________________________________________________________________________________________
+class CustomLoss(nn.Module):
+    def __init__(self):
+        super(CustomLoss, self).__init__()
+
+    def forward(self, y_pred, y_true, penalty, penalty_strength):
+        loss = torch.mean((y_pred - y_true) ** 2) + penalty*penalty_strength
+        return loss
+    
+"""
+======================================= NOTES ABOUT THE CUSTOM LOSS FUNCTION =====================================================
+
+loss = torch.mean((y_pred - y_true) ** 2) + penalty*penalty_strength
+
+The loss function is basically a MSE + a penalty for the number of kept (non-zero) features.
+The 'penalty' term is just the number of kept features and the 'penalty_strength' term is the coefficient
+by which we multiply the 'penalty' term (so the higher that coefficient the more severe the penalty).
+
+"""
 
 
 # define the training function___________________________________________________________________________________________-
-def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_epochs):
+def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_epochs, penalty_strength_param):
      
     global train_acc_array  # delcare as global so we can use it outside the function
     global test_acc_array
     train_acc_array = np.arange(num_epochs, dtype = np.float64)
     test_acc_array = np.arange(num_epochs, dtype = np.float64)
 
+    global binary_weight_matrix
+    binary_weight_matrix = np.zeros((num_epochs, X_train.shape[1]), dtype = np.float16)  # saving the weights (of the binary mask) at each epoch
+
     for epoch in range(0, num_epochs):
           
-          model.train()  # set model to training mode
-          optimizer.zero_grad()   # remove all gradients
-          Y_pred_train = model(X_train)  # make a prediction based on the training set
-          loss = loss_function(Y_pred_train, Y_train)  # calculate the losss
-          train_acc = loss  # save the training accuracy for the current epoch
-          train_acc_array[epoch] = train_acc  # save to array for plotting
-          loss.backward() # based on the loss use the chain rule to get the gradient
-          optimizer.step()  # make a step based on the gradient
-
-          model.eval()  # set model to evaluation mode
-          Y_pred_test = model(X_test)  # make prediction based on the test set
-          loss = loss_function(Y_pred_test, Y_test)  # calculate testing loss
-          test_acc = loss  # save the testing accuracy for the current epoch
-          test_acc_array[epoch] = test_acc  # save for plotting
-
-          # pring the binary weights of the custom layer
 
           # the differentialble weights from the STE procedure
           custom_layer_weights_for_backprop = model.custom.weight
@@ -90,16 +97,61 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
           # the binarized weights from the forward pass (the binary feature mask)
           custom_layer_weights_for_forward_pass = model.custom.binarize(custom_layer_weights_for_backprop).detach().cpu().numpy()
 
-          suma = np.sum(custom_layer_weights_for_forward_pass)
-          print(suma)
-          print(f"Epoch: {epoch} | Custom Layer Binary Weights: {custom_layer_weights_for_forward_pass}")
-          print("="*50)
+          # get the sum of the binary mask layer, this  sum corresponds to the number of 'kept' features
+          num_features_kept = np.sum(custom_layer_weights_for_forward_pass)
+
+          binary_weight_matrix[epoch,:] = custom_layer_weights_for_forward_pass # save the weights
+
+          model.train()  # set model to training mode
+          optimizer.zero_grad()   # remove all gradients
+          Y_pred_train = model(X_train)  # make a prediction based on the training set
+
+          loss = loss_function(y_pred = Y_pred_train, y_true = Y_train, penalty = num_features_kept, penalty_strength = penalty_strength_param)  # calculate the losss
+          train_acc = loss  # save the training accuracy for the current epoch
+          train_acc_array[epoch] = train_acc  # save to array for plotting
+          loss.backward() # based on the loss use the chain rule to get the gradient
+          optimizer.step()  # make a step based on the gradient
+
+          model.eval()  # set model to evaluation mode
+          Y_pred_test = model(X_test)  # make prediction based on the test set
+          loss = loss_function(y_pred = Y_pred_test, y_true = Y_test, penalty = num_features_kept, penalty_strength = penalty_strength_param)  # calculate testing loss
+          test_acc = loss  # save the testing accuracy for the current epoch
+          test_acc_array[epoch] = test_acc  # save for plotting
+
+          status = 'Epoch: {}/{}'.format(epoch, num_epochs)
+          print(status)
+          print('='*50)
+
 
 
 # train the model and inspect the weigths at each epoch_____________________________________________________________________________
 # here I dont care about the performance of the model, I just want to check how the weights behave.
 model = Model_with_CustomLayer()
-loss_fn = nn.MSELoss()
+loss_fn = CustomLoss()
 optim = optim.Adam(model.parameters())
-n_epochs = 10
-train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs)
+n_epochs = 1000
+train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs, penalty_strength_param=10)
+
+
+np.savetxt("C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/CUSTOM_LOSS_FUNCTION/binary_weigth_matrix.csv",
+           binary_weight_matrix,
+           delimiter = ',',
+           fmt="%d")
+
+# this prints the amount of binary weight 'flips'
+diff = np.sum(binary_weight_matrix[1,:] - binary_weight_matrix[(n_epochs-1),:])
+print(diff)
+
+
+
+
+
+plt.plot(range(0, n_epochs), train_acc_array, label="Train loss", color='blue', linestyle='-')
+plt.plot(range(0, n_epochs), test_acc_array, label="Test loss", color='red', linestyle='--')
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.legend()
+plt.grid()
+plt.show()
+
+

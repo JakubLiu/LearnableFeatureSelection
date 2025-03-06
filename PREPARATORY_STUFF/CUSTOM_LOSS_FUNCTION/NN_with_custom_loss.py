@@ -50,7 +50,7 @@ class CustomLoss(nn.Module):
         self.hyperparam = hyperparam
 
     def forward(self, input, target):
-        loss = torch.max(self.hyperparam * (input - target) ** 2)
+        loss = torch.mean(self.hyperparam * (input - target) ** 2)
         return loss
     
 """
