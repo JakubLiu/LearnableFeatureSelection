@@ -8,8 +8,8 @@ from torchvision import datasets, transforms
 from matplotlib import pyplot as plt
 
 # read and prepare data _____________________________________________________________________
-X = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/PYTORCH_RECAP/X_sim.txt', dtype = np.float32)
-Y = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/PYTORCH_RECAP/Y_sim.txt', dtype = np.float32)
+X = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/LEARNING_TEST/X.txt', dtype = np.float32)
+Y = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/LEARNING_TEST/y.txt', dtype = np.float32)
 X = torch.tensor(X)
 Y = torch.tensor(Y).reshape(-1, 1)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.33)
@@ -26,7 +26,7 @@ class CustomLinear(nn.Module):
         self.weight = nn.Parameter(torch.randn(input_dim)) # initialize random weigths
 
     def binarize(self, weight):  # function that sets the weights to 0 or 1
-        weight_bin = (weight >= 0).float()
+        weight_bin = (torch.abs(weight) >= 0.5).float() # set the weight to 0 if its abs() is lower than 0.5, else set the weight to 1
         return (weight_bin - weight).detach() + weight # this is the STE procedure
 
     def forward(self, input):
@@ -90,7 +90,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
 
     for epoch in range(0, num_epochs):
           
-
+          # ==================== BLOCK NOT EXPLICITYL NEEDED, ONLY USED FOR INFERENCE ============================================
           # the differentialble weights from the STE procedure
           custom_layer_weights_for_backprop = model.custom.weight
           
@@ -101,6 +101,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
           num_features_kept = np.sum(custom_layer_weights_for_forward_pass)
 
           binary_weight_matrix[epoch,:] = custom_layer_weights_for_forward_pass # save the weights
+          # ========================================================================================================================
 
           model.train()  # set model to training mode
           optimizer.zero_grad()   # remove all gradients
@@ -130,7 +131,7 @@ model = Model_with_CustomLayer()
 loss_fn = CustomLoss()
 optim = optim.Adam(model.parameters())
 n_epochs = 1000
-train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs, penalty_strength_param=10)
+train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs, penalty_strength_param=1)
 
 
 np.savetxt("C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/CUSTOM_LOSS_FUNCTION/binary_weigth_matrix.csv",
@@ -139,8 +140,9 @@ np.savetxt("C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/Learn
            fmt="%d")
 
 # this prints the amount of binary weight 'flips'
-diff = np.sum(binary_weight_matrix[1,:] - binary_weight_matrix[(n_epochs-1),:])
-print(diff)
+num_flips = np.sum(np.abs(binary_weight_matrix[1,:] - binary_weight_matrix[(n_epochs-1),:]))
+diag = 'Number of binary weight flips between the 1st and last epoch: {}'.format(num_flips)
+print(diag)
 
 
 
