@@ -21,12 +21,13 @@ input_dim = X_train.shape[1]
 
 class CustomLinear(nn.Module):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, input_dim, output_dim, cutoff = 0.5, *args, **kwargs):
         super(CustomLinear, self).__init__()
         self.weight = nn.Parameter(torch.randn(input_dim)) # initialize random weigths
+        self.cutoff = cutoff
 
     def binarize(self, weight):  # function that sets the weights to 0 or 1
-        weight_bin = (torch.abs(weight) >= 0.5).float() # set the weight to 0 if its abs() is lower than 0.5, else set the weight to 1
+        weight_bin = (torch.abs(weight) >= self.cutoff).float() # set the weight to 0 if its abs() is lower than 0.5, else set the weight to 1
         return (weight_bin - weight).detach() + weight # this is the STE procedure
 
     def forward(self, input):
@@ -39,7 +40,7 @@ class Model_with_CustomLayer(nn.Module):
      
     def __init__(self):
         super(Model_with_CustomLayer, self).__init__()
-        self.custom = CustomLinear(input_dim, input_dim) # this is the custom layers
+        self.custom = CustomLinear(input_dim, input_dim, cutoff=0.5) # this is the custom layer
         self.fc1 = nn.Linear(input_dim, 64)
         self.fc2 = nn.Linear(64,32)
         self.fc3 = nn.Linear(32,1)
@@ -90,7 +91,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
 
     for epoch in range(0, num_epochs):
           
-          # ==================== BLOCK NOT EXPLICITYL NEEDED, ONLY USED FOR INFERENCE ============================================
+          
           # the differentialble weights from the STE procedure
           custom_layer_weights_for_backprop = model.custom.weight
           
@@ -101,7 +102,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
           num_features_kept = np.sum(custom_layer_weights_for_forward_pass)
 
           binary_weight_matrix[epoch,:] = custom_layer_weights_for_forward_pass # save the weights
-          # ========================================================================================================================
+          
 
           model.train()  # set model to training mode
           optimizer.zero_grad()   # remove all gradients
@@ -130,7 +131,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
 model = Model_with_CustomLayer()
 loss_fn = CustomLoss()
 optim = optim.Adam(model.parameters())
-n_epochs = 1000
+n_epochs = 10000
 train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs, penalty_strength_param=1)
 
 

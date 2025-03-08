@@ -34,12 +34,13 @@ https://stackoverflow.com/questions/79469831/using-binary-0-1-weights-in-a-neura
 """
 class CustomLinear(nn.Module):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, input_dim, output_dim, cutoff = 0.5, *args, **kwargs):
         super(CustomLinear, self).__init__()
         self.weight = nn.Parameter(torch.randn(input_dim)) # initialize random weigths
+        self.cutoff = cutoff
 
     def binarize(self, weight):  # function that sets the weights to 0 or 1
-        weight_bin = (weight >= 0).float()
+        weight_bin = (torch.abs(weight) >= self.cutoff).float() # set the weight to 0 if its abs() is lower than 0.5, else set the weight to 1
         return (weight_bin - weight).detach() + weight # this is the STE procedure
 
     def forward(self, input):
@@ -59,7 +60,7 @@ class Model_with_CustomLayer(nn.Module):
      
     def __init__(self):
         super(Model_with_CustomLayer, self).__init__()
-        self.custom = CustomLinear(input_dim, input_dim) # this is the custom layers
+        self.custom = CustomLinear(input_dim, input_dim, cutoff = 0.5) # this is the custom layers
         self.fc1 = nn.Linear(input_dim, 64)
         self.fc2 = nn.Linear(64,32)
         self.fc3 = nn.Linear(32,1)
