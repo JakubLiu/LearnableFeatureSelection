@@ -25,7 +25,7 @@ class Model_with_CustomLayer(nn.Module):
      
     def __init__(self):
         super(Model_with_CustomLayer, self).__init__()
-        self.custom = src.CustomLinear(input_dim, input_dim, cutoff=0.5) # this is the custom layer
+        self.custom = src.CustomLinear(input_dim, input_dim, cutoff=0.7) # this is the custom layer
         self.fc1 = nn.Linear(input_dim, 64)
         self.fc2 = nn.Linear(64,32)
         self.fc3 = nn.Linear(32,1)
@@ -93,7 +93,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
 # define the training parameters_____________________________________________________________________________________________________
 
 model = Model_with_CustomLayer()
-loss_fn = src.CustomLoss(penalty_strength = 10000)
+loss_fn = src.CustomLoss(penalty_strength = 10)
 optim = optim.Adam(model.parameters())
 n_epochs = 10000
 
@@ -120,3 +120,37 @@ plt.legend()
 plt.grid()
 plt.show()
 
+"""
+cutoff = 0.5
+
+Correct inclusion rate: 0.2673
+Correct exclusion rate: 0.5714
+
+___________________________________________________________________________________________
+
+cutoff = 0.2
+
+Correct inclusion rate: 0.5545
+Correct exclusion rate: 0.3469
+
+_________________________________________________________________________________________
+
+cutoff = 0.7 -----------------------> best for now
+
+Correct inclusion rate: 0.2871
+Correct exclusion rate: 0.6327
+
+_______________________________________________________________________________________
+
+cutoff = 0.9
+
+Correct inclusion rate: 0.2475
+Correct exclusion rate: 0.6327
+
+______________________________________________________________________________________
+
+cutoff = 1.5
+
+Correct inclusion rate: 0.0693
+Correct exclusion rate: 0.9184
+"""
