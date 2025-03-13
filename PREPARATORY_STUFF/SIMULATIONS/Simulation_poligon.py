@@ -93,7 +93,7 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
 # define the training parameters_____________________________________________________________________________________________________
 
 model = Model_with_CustomLayer()
-loss_fn = src.CustomLoss(penalty_strength = 10)
+loss_fn = src.CustomLoss(penalty_strength = 80)
 optim = optim.Adam(model.parameters())
 n_epochs = 10000
 
@@ -153,4 +153,33 @@ cutoff = 1.5
 
 Correct inclusion rate: 0.0693
 Correct exclusion rate: 0.9184
+"""
+
+"""
+penalty = 10
+
+Correct inclusion rate: 0.297
+Correct exclusion rate: 0.6735
+
+_________________________________________________________________________________________________________________
+
+penalty = 20  ---------------------------> best so far
+
+Correct inclusion rate: 0.3267
+Correct exclusion rate: 0.7143
+
+____________________________________________________________________________________________________________
+
+
+penalty = 50
+
+Correct inclusion rate: 0.2772
+Correct exclusion rate: 0.5714
+
+____________________________________________________________________________________________________________
+
+penalty = 80
+
+Correct inclusion rate: 0.3861
+Correct exclusion rate: 0.551
 """
