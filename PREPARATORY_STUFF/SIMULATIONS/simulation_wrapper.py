@@ -77,9 +77,9 @@ def train(model, X_train, X_test, Y_train, Y_test, loss_function, optimizer,num_
           test_acc = loss  # save the testing accuracy for the current epoch
           test_acc_array[epoch] = test_acc  # save for plotting
 
-          status = 'Epoch: {}/{}'.format(epoch, num_epochs)
-          print(status)
-          print('='*50)
+          #status = 'Epoch: {}/{}'.format(epoch, num_epochs)
+          #print(status)
+          #print('='*50)
 
 
 def Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_test, Y_train, Y_test):
@@ -88,9 +88,31 @@ def Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_tes
     model = Model_with_CustomLayer(input_dim=num_features, thresh=thresh)
     loss_fn = src.CustomLoss(penalty_strength = penalty_strength)
 
+    # for all these optimizers, their default parameters will be used
+    global optimi
     if optimizer == 'Adam':   
-        global optim
-        optim = optim.Adam(model.parameters())
+        optimi = optim.Adam(model.parameters())
+    
+    elif optimizer == 'AdamW':
+        optimi = optim.AdamW(model.parameters())
+
+    elif optimizer == 'RMSprop':
+        optimi = optim.RMSprop(model.parameters())
+    
+    elif optimizer == 'Adagram':
+        optimi = optim.Adagrad(model.parameters())
+    
+    elif optimizer == 'Adadelta':
+        optimi = optim.Adadelta(model.parameters())
+    
+    elif optimizer == 'NAdam':
+        optimi = optim.NAdam(model.parameters())
+    
+    elif optimizer == 'ASGD':
+        optimi = optim.ASGD(model.parameters())
+    
+    else:  # use stochastic gradient descent by default
+        optimizer = optim.SGD(model.parameters())
 
     n_epochs = n_epochs
 
@@ -101,15 +123,22 @@ def Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_tes
     for i in range(0, n_rep):
         status = str(i/n_rep*100) + '%'
         print(status)
-        train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optim, num_epochs = n_epochs)
+        train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optimi, num_epochs = n_epochs)
         performance_metrics = src.performance_on_simdata1(binary_weight_matrix[(n_epochs-1),:])
         correct_inclusion_rate = performance_metrics[0]
         correct_exclusion_rate = performance_metrics[1]
-        inclusion_rates[i] = correct_exclusion_rate
+        inclusion_rates[i] = correct_inclusion_rate
         exclusion_rates[i] = correct_exclusion_rate
 
 
-    return (inclusion_rates, exclusion_rates)
+    report = {'threshold': thresh,
+              'penalty strength' : penalty_strength,
+              'optimizer': optimizer,
+              'n_epochs': n_epochs,
+              'n_repetitions': n_rep}
+
+
+    return (inclusion_rates, exclusion_rates, report)
 
 
 # ===================================================================================================================================
@@ -121,12 +150,18 @@ X = torch.tensor(X)
 Y = torch.tensor(Y).reshape(-1, 1)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.33)
 
-Wrapper(thresh=0.5,
+out = Wrapper(thresh=0.5,
         penalty_strength=10,
-        optimizer='Adam',
-        n_epochs=5,
-        n_rep=10,
+        optimizer='AdamW',
+        n_epochs=1000,
+        n_rep=20,
         X_train=X_train,
         X_test=X_test,
         Y_train=Y_train,
         Y_test=Y_test)
+
+mean_inclustion_rates = np.mean(out[0])
+mean_exclusion_rates = np.mean(out[1])
+
+print(mean_inclustion_rates)
+print(mean_exclusion_rates)
