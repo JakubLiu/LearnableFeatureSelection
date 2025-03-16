@@ -142,7 +142,7 @@ def Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_tes
 
 
 # ===================================================================================================================================
-
+'''
 # read and prepare data _____________________________________________________________________
 X = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/LEARNING_TEST/X.txt', dtype = np.float32)
 Y = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/LEARNING_TEST/y.txt', dtype = np.float32)
@@ -165,3 +165,4 @@ mean_exclusion_rates = np.mean(out[1])
 
 print(mean_inclustion_rates)
 print(mean_exclusion_rates)
+'''
