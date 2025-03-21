@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 from matplotlib import pyplot as plt
+import multiprocessing as mp
 sys.path.append("C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/SOURCECODE/")
 import sourcecode as src
 
@@ -122,7 +123,7 @@ def Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_tes
 
     for i in range(0, n_rep):
         status = str(i/n_rep*100) + '%'
-        print(status)
+        print(status, flush=True)
         train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optimi, num_epochs = n_epochs)
         performance_metrics = src.performance_on_simdata1(binary_weight_matrix[(n_epochs-1),:])
         correct_inclusion_rate = performance_metrics[0]
@@ -140,6 +141,63 @@ def Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_tes
 
 
     return (inclusion_rates, exclusion_rates, report)
+
+
+# Wrapper(thresh, penalty_strength, optimizer, n_epochs, n_rep, X_train, X_test, Y_train, Y_test):
+
+def WrapperScalar(j,thresh, penalty_strength, optimizer, n_epochs, X_train, X_test, Y_train, Y_test):
+    num_features = X_train.shape[1]
+    model = Model_with_CustomLayer(input_dim=num_features, thresh=thresh)
+    loss_fn = src.CustomLoss(penalty_strength = penalty_strength)
+
+    # for all these optimizers, their default parameters will be used
+    global optimi
+    if optimizer == 'Adam':   
+        optimi = optim.Adam(model.parameters())
+    
+    elif optimizer == 'AdamW':
+        optimi = optim.AdamW(model.parameters())
+
+    elif optimizer == 'RMSprop':
+        optimi = optim.RMSprop(model.parameters())
+    
+    elif optimizer == 'Adagram':
+        optimi = optim.Adagrad(model.parameters())
+    
+    elif optimizer == 'Adadelta':
+        optimi = optim.Adadelta(model.parameters())
+    
+    elif optimizer == 'NAdam':
+        optimi = optim.NAdam(model.parameters())
+    
+    elif optimizer == 'ASGD':
+        optimi = optim.ASGD(model.parameters())
+    
+    else:  # use stochastic gradient descent by default
+        optimizer = optim.SGD(model.parameters())
+
+    train(model, X_train, X_test, Y_train, Y_test, loss_function = loss_fn, optimizer = optimi, num_epochs = n_epochs)
+    performance_metrics = src.performance_on_simdata1(binary_weight_matrix[(n_epochs-1),:])
+    #correct_inclusion_rate = performance_metrics[0]
+    correct_exclusion_rate = performance_metrics[1]
+
+    return correct_exclusion_rate
+
+
+# def WrapperScalar(j,thresh, penalty_strength, optimizer, n_epochs, X_train, X_test, Y_train, Y_test):
+
+def WrapperArray(num_cores, n_rep, thresh, penalty_strength, optimizer, n_epochs, X_train, X_test, Y_train, Y_test):
+
+    with mp.Pool(processes=num_cores) as pool:
+        correct_exclusion_rate_array = pool.starmap(WrapperScalar, [(j, thresh, penalty_strength, optimizer, n_epochs, X_train, X_test, Y_train, Y_test) 
+                                           for j in range(n_rep)])
+        
+
+    return np.array(correct_exclusion_rate_array)
+    
+
+    
+
 
 
 # ===================================================================================================================================

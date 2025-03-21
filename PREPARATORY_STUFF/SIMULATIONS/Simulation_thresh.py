@@ -8,15 +8,15 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 from matplotlib import pyplot as plt
-sys.path.append("C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/SOURCECODE/")
+import multiprocessing as mp
+sys.path.append("/media/DANE/home/jliu/LEARNABLE_FS/PREPARATORY_STUFF/SOURCECODE")
 import sourcecode as src
-sys.path.append("C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/SIMULATIONS/simulation_wrapper.py")
+sys.path.append("/media/DANE/home/jliu/LEARNABLE_FS/PREPARATORY_STUFF/SIMULATIONS/simulation_wrapper.py")
 import simulation_wrapper as wrp
 
-
 # read and prepare data _____________________________________________________________________
-X = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/LEARNING_TEST/X.txt', dtype = np.float32)
-Y = np.loadtxt('C:/Users/Qba Liu/Documents/NAUKA_WLASNA/FEATURE_SELECTION_IDEA/LearnableFeatureSelection/PREPARATORY_STUFF/LEARNING_TEST/y.txt', dtype = np.float32)
+X = np.loadtxt('/media/DANE/home/jliu/LEARNABLE_FS/PREPARATORY_STUFF/LEARNING_TEST/X.txt', dtype = np.float32)
+Y = np.loadtxt('/media/DANE/home/jliu/LEARNABLE_FS/PREPARATORY_STUFF/LEARNING_TEST/y.txt', dtype = np.float32)
 X = torch.tensor(X)
 Y = torch.tensor(Y).reshape(-1, 1)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.33)
@@ -30,7 +30,7 @@ simulation_table = pd.DataFrame(index=range(len(thresh_values)), columns=cols)
 
 for i in range(0, len(thresh_values)):
 
-    print('===============================threshold: {}========================================='.format(thresh_values[i]))
+    print('===============================threshold: {}========================================='.format(thresh_values[i]), flush=True)
     simulation_table.iloc[i,0] = thresh_values[i]
 
     sim = wrp.Wrapper(thresh=thresh_values[i],
@@ -55,11 +55,3 @@ for i in range(0, len(thresh_values)):
 
 
 print(simulation_table)
-
-
-plt.plot(thresh_values, simulation_table.iloc[:,3])
-plt.xticks(thresh_values)
-plt.xlabel('cutoff threshold value')
-plt.ylabel('summary score')
-plt.grid()
-plt.show()
