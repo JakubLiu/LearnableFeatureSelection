@@ -41,7 +41,7 @@ plt.show()
 
 
 '''
-
+'''
 data = pd.read_csv('Simulation_optimizers.txt', sep = ' ')
 
 plt.plot(data.iloc[:,0], data.iloc[:,1], label = 'mean correct inclusion rate')
@@ -52,6 +52,18 @@ plt.legend()
 plt.xlabel('Optimizers')
 plt.ylabel('metrics')
 plt.show()
+'''
+
+
+data = pd.read_csv('Simulation_model_depths.txt', sep = ' ')
+
+plt.plot(data.iloc[:,0], data.iloc[:,1], label = 'mean correct inclusion')
+plt.plot(data.iloc[:,0], data.iloc[:,2], label = 'mean correct exclusion')
+plt.plot(data.iloc[:,0], data.iloc[:,3], label = 'mean summary score')
+plt.grid()
+plt.legend()
+plt.show()
+
 
 
 
